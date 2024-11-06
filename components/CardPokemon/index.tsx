@@ -1,15 +1,16 @@
 import { Colors } from "@/constants/Colors";
+import { upperCaseFirstLetter } from "@/utils/textTransform";
 import { Image } from "expo-image";
-import { Link, router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 interface Props {
   id: number
   index: number
-  imgUrl: string
   name: string
   onPress?: () => void
 }
+
+const BASE_IMAGE_URL = process.env.EXPO_PUBLIC_IMAGE_BASE_URL
 
 export const CardPokemon: React.FC<Props> = (props) => (
   <Pressable
@@ -18,13 +19,13 @@ export const CardPokemon: React.FC<Props> = (props) => (
   >
     <Image
       style={styles.img}
-      source={props.imgUrl}
+      source={`${BASE_IMAGE_URL}/${props.id}.png`}
       contentFit="contain"
-      transition={300}
     />
-    <Text style={styles.name}>{props.name}</Text>
+    <Text style={styles.name}>{upperCaseFirstLetter(props.name)}</Text>
   </Pressable>
 )
+
 
 const styles = StyleSheet.create({
   card: {

@@ -1,5 +1,5 @@
 import { commonStyles } from "@/styles/global";
-import { Pressable, StyleSheet, Text, View, FlatList, ScrollView } from "react-native";
+import { Pressable, StyleSheet, Text, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from '@expo/vector-icons/Feather'
 import { Colors } from '@/constants/Colors';
@@ -7,12 +7,18 @@ import { HeaderNavigation } from "@/components/HeaderNavigation";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
+import { useQuery } from "@tanstack/react-query";
+import { pokemonKey } from "@/constants/QueryKey";
+import { getPokemon } from "@/services/pokemon";
+import { CardSprite } from "@/components/CardSprite";
+import { upperCaseFirstLetter } from "@/utils/textTransform";
 
-const blurhash =
-  '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
+const BASE_IMAGE_URL = process.env.EXPO_PUBLIC_IMAGE_BASE_URL
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams();
+  const { data, isLoading, isError } = useQuery([pokemonKey, id], () => getPokemon(id as string))
+  const spritesKeyList = Object.keys(data?.sprites || {}).filter(key => data?.sprites[key] !== null && key !== 'other' && key !== 'versions') || []
 
   return (
     <SafeAreaView style={commonStyles.safearea}>
@@ -21,47 +27,53 @@ export default function DetailScreen() {
         onPress={router.back}
       />
 
-      <ScrollView>
-        <View style={styles.hero}>
-          <Image
-            style={styles.heroImage}
-            source={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${1}.png`}
-            contentFit="contain"
-            placeholder={{ blurhash }}
-            transition={1000}
-          />
-        </View>
-
-        <View style={styles.detailSection}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.txtName}>Ditto {id}</Text>
-            <Pressable>
-              <Feather name="heart" size={20} />
-            </Pressable>
-          </View>
-          <Text style={styles.sectionTitle}>Sprites Gallery</Text>
-
-          <View style={{ width: '100%' }}>
-            <FlashList
-              contentContainerStyle={{ paddingBottom: 16 }}
-              horizontal={false}
-              numColumns={2}
-              data={DATA}
-              renderItem={({ item, index }) => (
-                <SpriteCard
-                  index={index + 1}
-                  imgUrl={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${index + 1}.png`}
-                />
-              )}
-              estimatedItemSize={115}
-              ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+      {isLoading ? null :
+        <ScrollView>
+          <View style={styles.hero}>
+            <Image
+              style={styles.heroImage}
+              source={`${BASE_IMAGE_URL}/${id}.png`}
+              contentFit="contain"
             />
           </View>
 
-          <Text style={styles.sectionTitle}>Abiliteis</Text>
-          {ABILITIES.map((v: any, i: number) => <Text key={i} style={styles.txtAbility}>Abilities ${i}</Text>)}
-        </View>
-      </ScrollView>
+          <View style={styles.detailSection}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.txtName}>{upperCaseFirstLetter(data!.name)}</Text>
+              <Pressable>
+                <Feather name="heart" size={20} />
+              </Pressable>
+            </View>
+            <Text style={styles.sectionTitle}>Sprites Gallery</Text>
+
+            <View style={{ width: '100%' }}>
+              <FlashList
+                contentContainerStyle={{ paddingBottom: 16 }}
+                horizontal={false}
+                numColumns={2}
+                data={spritesKeyList}
+                renderItem={({ item, index }) => (
+                  <CardSprite
+                    index={index + 1}
+                    imgUrl={data?.sprites[item]}
+                  />
+                )}
+                estimatedItemSize={115}
+                ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+              />
+            </View>
+
+            <Text style={styles.sectionTitle}>Abiliteis</Text>
+            {data?.abilities.map((ability) => (
+              <Text
+                key={ability.ability.name}
+                style={styles.txtAbility}>
+                {upperCaseFirstLetter(ability.ability.name)}
+              </Text>
+            ))}
+          </View>
+        </ScrollView>
+      }
     </SafeAreaView>
   )
 }
@@ -105,30 +117,3 @@ const styles = StyleSheet.create({
     color: Colors.light.text.secondary
   }
 })
-
-interface Props {
-  index: number
-  imgUrl: string
-}
-
-export const SpriteCard: React.FC<Props> = (props) => (
-  <View
-    style={{ height: 115, flex: 1, padding: 16, borderRadius: 5, borderWidth: 1, borderColor: Colors.light.border.primary, marginLeft: props.index % 2 !== 0 ? 0 : 8, marginRight: props.index % 2 === 0 ? 0 : 8 }}
-  >
-    <Image
-      style={{ flex: 1, borderTopRightRadius: 5 }}
-      source={props.imgUrl}
-      contentFit="contain"
-      placeholder={{ blurhash }}
-      transition={1000}
-    />
-  </View>
-)
-
-const DATA = Array(10).fill(0).map((v: any, i: number) => ({
-  id: i + 1,
-  name: `Name ${i}`,
-  url: 'https://pokeapi.co/api/v2/pokemon/1/'
-}))
-
-const ABILITIES = Array(5).fill(0).map(v => ({}))
