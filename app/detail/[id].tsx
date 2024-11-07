@@ -14,6 +14,8 @@ import { CardSprite } from "@/components/CardSprite";
 import { upperCaseFirstLetter } from "@/utils/textTransform";
 import { useData } from "@/context/DataContext";
 import { ErrorPokedex } from "@/components/ErrorPokemon";
+import { Snackbar } from 'react-native-paper';
+import { useState } from "react";
 
 const BASE_IMAGE_URL = process.env.EXPO_PUBLIC_IMAGE_BASE_URL
 
@@ -21,6 +23,7 @@ export default function DetailScreen() {
   const { id } = useLocalSearchParams();
   const { actions } = useData()
   const { data, isLoading, isError } = useQuery([pokemonKey, id], () => getPokemon(id as string))
+  const [message, setMessage] = useState('')
   const spritesKeyList = Object.keys(data?.sprites || {}).filter(key => data?.sprites[key] !== null && key !== 'other' && key !== 'versions') || []
 
   const favoritePokemon = () => {
@@ -35,11 +38,15 @@ export default function DetailScreen() {
     let numberedId = parseInt(id as string)
 
     if (actions.isPokemonExist(numberedId)) {
+      setMessage('You unfavorite this pokemon')
       return removeFavoritePokemon(numberedId)
     }
 
+    setMessage('You favorite this pokemon')
     favoritePokemon()
   }
+
+  const onDismissSnackbar = () => setMessage('')
 
   return (
     <SafeAreaView style={commonStyles.safearea}>
@@ -101,6 +108,13 @@ export default function DetailScreen() {
             </View>
           </ScrollView>
       }
+      <Snackbar
+        visible={message.length > 0}
+        onDismiss={onDismissSnackbar}
+        duration={3000}
+      >
+        {message}
+      </Snackbar>
     </SafeAreaView>
   )
 }
