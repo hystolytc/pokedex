@@ -71,7 +71,10 @@ export default function DetailScreen() {
             <View style={styles.detailSection}>
               <View style={styles.nameContainer}>
                 <Text style={styles.txtName}>{upperCaseFirstLetter(data!.name)}</Text>
-                <Pressable onPress={onFavorite}>
+                <Pressable
+                  style={styles.btnFavorite}
+                  onPress={onFavorite}
+                >
                   <AntDesign
                     name={actions.isPokemonExist(parseInt(id as string)) ? 'heart' : 'hearto'}
                     size={28}
@@ -141,6 +144,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 36,
     color: Colors.light.text.primary
+  },
+  btnFavorite: {
+    marginTop: 14,
   },
   detailSection: {
     paddingHorizontal: 16,
