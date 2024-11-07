@@ -1,7 +1,7 @@
 import { commonStyles } from "@/styles/global";
 import { Pressable, StyleSheet, Text, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Feather from '@expo/vector-icons/Feather'
+import AntDesign from '@expo/vector-icons/AntDesign'
 import { Colors } from '@/constants/Colors';
 import { HeaderNavigation } from "@/components/HeaderNavigation";
 import { Image } from "expo-image";
@@ -12,13 +12,34 @@ import { pokemonKey } from "@/constants/QueryKey";
 import { getPokemon } from "@/services/pokemon";
 import { CardSprite } from "@/components/CardSprite";
 import { upperCaseFirstLetter } from "@/utils/textTransform";
+import { useData } from "@/context/DataContext";
+import { ErrorPokedex } from "@/components/ErrorPokemon";
 
 const BASE_IMAGE_URL = process.env.EXPO_PUBLIC_IMAGE_BASE_URL
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams();
+  const { actions } = useData()
   const { data, isLoading, isError } = useQuery([pokemonKey, id], () => getPokemon(id as string))
   const spritesKeyList = Object.keys(data?.sprites || {}).filter(key => data?.sprites[key] !== null && key !== 'other' && key !== 'versions') || []
+
+  const favoritePokemon = () => {
+    actions.setPokemon({ id: parseInt(id as string), name: data!.name })
+  }
+
+  const removeFavoritePokemon = (id: number) => {
+    actions.removePokemon(id)
+  }
+
+  const onFavorite = () => {
+    let numberedId = parseInt(id as string)
+
+    if (actions.isPokemonExist(numberedId)) {
+      return removeFavoritePokemon(numberedId)
+    }
+
+    favoritePokemon()
+  }
 
   return (
     <SafeAreaView style={commonStyles.safearea}>
@@ -27,52 +48,58 @@ export default function DetailScreen() {
         onPress={router.back}
       />
 
-      {isLoading ? null :
-        <ScrollView>
-          <View style={styles.hero}>
-            <Image
-              style={styles.heroImage}
-              source={`${BASE_IMAGE_URL}/${id}.png`}
-              contentFit="contain"
-            />
-          </View>
-
-          <View style={styles.detailSection}>
-            <View style={styles.nameContainer}>
-              <Text style={styles.txtName}>{upperCaseFirstLetter(data!.name)}</Text>
-              <Pressable>
-                <Feather name="heart" size={20} />
-              </Pressable>
-            </View>
-            <Text style={styles.sectionTitle}>Sprites Gallery</Text>
-
-            <View style={{ width: '100%' }}>
-              <FlashList
-                contentContainerStyle={{ paddingBottom: 16 }}
-                horizontal={false}
-                numColumns={2}
-                data={spritesKeyList}
-                renderItem={({ item, index }) => (
-                  <CardSprite
-                    index={index + 1}
-                    imgUrl={data?.sprites[item]}
-                  />
-                )}
-                estimatedItemSize={115}
-                ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+      {isError ?
+        <ErrorPokedex />
+        :
+        isLoading ? null :
+          <ScrollView>
+            <View style={styles.hero}>
+              <Image
+                style={styles.heroImage}
+                source={`${BASE_IMAGE_URL}/${id}.png`}
+                contentFit="contain"
               />
             </View>
 
-            <Text style={styles.sectionTitle}>Abiliteis</Text>
-            {data?.abilities.map((ability) => (
-              <Text
-                key={ability.ability.name}
-                style={styles.txtAbility}>
-                {upperCaseFirstLetter(ability.ability.name)}
-              </Text>
-            ))}
-          </View>
-        </ScrollView>
+            <View style={styles.detailSection}>
+              <View style={styles.nameContainer}>
+                <Text style={styles.txtName}>{upperCaseFirstLetter(data!.name)}</Text>
+                <Pressable onPress={onFavorite}>
+                  <AntDesign
+                    name={actions.isPokemonExist(parseInt(id as string)) ? 'heart' : 'hearto'}
+                    size={28}
+                    color={actions.isPokemonExist(parseInt(id as string)) ? Colors.light.like : Colors.light.unlike} />
+                </Pressable>
+              </View>
+              <Text style={styles.sectionTitle}>Sprites Gallery</Text>
+
+              <View style={{ width: '100%' }}>
+                <FlashList
+                  contentContainerStyle={{ paddingBottom: 16 }}
+                  horizontal={false}
+                  numColumns={2}
+                  data={spritesKeyList}
+                  renderItem={({ item, index }) => (
+                    <CardSprite
+                      index={index + 1}
+                      imgUrl={data?.sprites[item]}
+                    />
+                  )}
+                  estimatedItemSize={115}
+                  ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+                />
+              </View>
+
+              <Text style={styles.sectionTitle}>Abiliteis</Text>
+              {data?.abilities.map((ability) => (
+                <Text
+                  key={ability.ability.name}
+                  style={styles.txtAbility}>
+                  {upperCaseFirstLetter(ability.ability.name)}
+                </Text>
+              ))}
+            </View>
+          </ScrollView>
       }
     </SafeAreaView>
   )
@@ -93,7 +120,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: "center",
     gap: 16
   },
   txtName: {

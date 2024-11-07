@@ -9,13 +9,16 @@ import { router } from "expo-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pokemonsKey } from "@/constants/QueryKey";
 import { getAllPokemon } from "@/services/pokemon";
+import { ErrorPokedex } from "@/components/ErrorPokemon";
+import { EmptyPokedex } from "@/components/EmptyPokedex";
 
 export default function HomeScreen() {
   const {
     data,
     isLoading,
     fetchNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
+    isError
   } = useInfiniteQuery([pokemonsKey], ({ pageParam = 0 }) => getAllPokemon({ limit: 20, offset: pageParam }), {
     getNextPageParam: (lastPage, allPages) => {
       const totalLoaded = allPages.flat().length;
@@ -55,32 +58,37 @@ export default function HomeScreen() {
         />
       </View>
 
-      {isLoading ?
-        null
+      {isError ?
+        <ErrorPokedex />
         :
-        <FlashList
-          contentContainerStyle={styles.commonPadding}
-          horizontal={false}
-          numColumns={2}
-          data={pokemons}
-          renderItem={({ item, index }) => {
-            const id = extractId(item.url)
-            return (
-              <CardPokemon
-                index={index + 1}
-                id={id}
-                name={item.name}
-                onPress={() => router.push({ pathname: '/detail/[id]', params: { id: id } })}
-              />
-            )
-          }}
-          estimatedItemSize={220}
-          ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-          onEndReached={fetchNextPage}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={isFetchingNextPage ? <ActivityIndicator /> : null}
-        />
+        isLoading ?
+          null
+          :
+          <FlashList
+            contentContainerStyle={styles.commonPadding}
+            horizontal={false}
+            numColumns={2}
+            data={pokemons}
+            renderItem={({ item, index }) => {
+              const id = extractId(item.url)
+              return (
+                <CardPokemon
+                  index={index + 1}
+                  id={id}
+                  name={item.name}
+                  onPress={() => router.push({ pathname: '/detail/[id]', params: { id: id } })}
+                />
+              )
+            }}
+            estimatedItemSize={220}
+            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+            onEndReached={fetchNextPage}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={isFetchingNextPage ? <ActivityIndicator /> : null}
+          />
       }
+
+      {pokemons.length === 0 ? <EmptyPokedex text="No pokemon was found!" /> : null}
 
     </SafeAreaView>
   )
