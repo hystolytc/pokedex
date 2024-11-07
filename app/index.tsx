@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list"
 import { Colors } from '@/constants/Colors';
@@ -11,6 +11,8 @@ import { pokemonsKey } from "@/constants/QueryKey";
 import { getAllPokemon } from "@/services/pokemon";
 import { ErrorPokedex } from "@/components/ErrorPokemon";
 import { EmptyPokedex } from "@/components/EmptyPokedex";
+import { SearchInput } from "@/components/SearchInput";
+import { useState } from "react";
 
 export default function HomeScreen() {
   const {
@@ -21,15 +23,31 @@ export default function HomeScreen() {
     isError
   } = useInfiniteQuery([pokemonsKey], ({ pageParam = 0 }) => getAllPokemon({ limit: 20, offset: pageParam }), {
     getNextPageParam: (lastPage, allPages) => {
-      const totalLoaded = allPages.flat().length;
+      const totalLoaded = allPages.flat().length * 20;
       return totalLoaded < lastPage.count ? totalLoaded : undefined;
     },
   })
   const pokemons = data?.pages.flatMap((page) => page.results) ?? [];
+  const [searchedPokemons, setSearchedPokemons] = useState<{ name: string, url: string }[] | undefined>(undefined)
 
-  function extractId(url: string) {
+  const extractId = (url: string) => {
     const match = url.match(/\/pokemon\/(\d+)\//);
     return match ? parseInt(match[1], 10) : 0;
+  }
+
+  const onSearch = (keyword: string) => {
+    if (keyword === '') return setSearchedPokemons(undefined)
+    setSearchedPokemons(pokemons.filter(pokemon => pokemon.name.toLowerCase().includes(keyword.trim())))
+  }
+
+  const EmptyState = () => {
+    if (isLoading) return null
+
+    if ((searchedPokemons && searchedPokemons.length === 0) || pokemons.length === 0) {
+      return <EmptyPokedex text="There is no pokemon found!" />
+    }
+
+    return null
   }
 
   return (
@@ -43,19 +61,8 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.commonPadding}>
-        <TextInput
-          style={{
-            borderWidth: 1,
-            borderRadius: 10,
-            borderColor: Colors.light.border.secondary,
-            fontSize: 16,
-            paddingHorizontal: 16,
-            paddingVertical: 8
-          }}
-          placeholder="Search by name..."
-          placeholderTextColor={Colors.light.text.tertiary}
-        />
+      <View style={styles.searchContainer}>
+        <SearchInput onSearch={onSearch} />
       </View>
 
       {isError ?
@@ -65,10 +72,10 @@ export default function HomeScreen() {
           null
           :
           <FlashList
-            contentContainerStyle={styles.commonPadding}
+            contentContainerStyle={styles.flashList}
             horizontal={false}
             numColumns={2}
-            data={pokemons}
+            data={searchedPokemons || pokemons}
             renderItem={({ item, index }) => {
               const id = extractId(item.url)
               return (
@@ -88,7 +95,7 @@ export default function HomeScreen() {
           />
       }
 
-      {pokemons.length === 0 ? <EmptyPokedex text="No pokemon was found!" /> : null}
+      <EmptyState />
 
     </SafeAreaView>
   )
@@ -111,7 +118,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16
   },
-  commonPadding: {
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 16
+  },
+  flashList: {
     paddingHorizontal: 16,
     paddingBottom: 16
   }
