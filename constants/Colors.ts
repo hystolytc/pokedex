@@ -23,6 +23,8 @@ export const Colors = {
       secondary: '#BBBBBB',
       tertiary: '#F0F0F0'
     },
+    like: '#ef4444',
+    unlike: '#000'
   },
   dark: {
     background: '#151718',
@@ -39,5 +41,7 @@ export const Colors = {
       primary: '#A8A8A8',
       secondary: '#BBBBBB'
     },
+    like: '#ef4444',
+    unlike: '#000'
   },
 };

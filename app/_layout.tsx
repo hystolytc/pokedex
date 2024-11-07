@@ -9,6 +9,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { DataProvider } from "@/context/DataContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,13 +34,15 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <QueryClientProvider client={queryClient}>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="detail/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="favorite" options={{ headerShown: false }} />
-        </Stack>
-      </QueryClientProvider>
+      <DataProvider>
+        <QueryClientProvider client={queryClient}>
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="detail/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="favorite" options={{ headerShown: false }} />
+          </Stack>
+        </QueryClientProvider>
+      </DataProvider>
     </ThemeProvider>
   );
 }
